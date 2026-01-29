@@ -2,11 +2,15 @@
 export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}", // Esta línea es vital
+    "./src/**/*.{js,ts,jsx,tsx}",
   ],
-  darkMode: 'class', // Agregá esto para que el modo oscuro funcione por clases
+  darkMode: 'class',
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+      },
+    },
   },
   plugins: [],
 }

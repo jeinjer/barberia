@@ -1,42 +1,73 @@
-import React, { useEffect, useState } from 'react';
-import { supabase } from './utils/supabase';
-import AuthPortal from './components/Auth/Portal/Auth';
-import SubscriptionGuard from './components/Auth/Portal/SubscriptionGuard';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'sonner';
 
-function App() {
-  const [session, setSession] = useState(null);
-  const [perfil, setPerfil] = useState(null);
+// Context
+import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext'; // <--- Importamos el Theme
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) fetchPerfil(session.user.id);
-    });
+// Layouts & Utils
+import Header from './components/Header/Header'; 
+import Footer from './components/Footer/Footer';
+import ScrollToTop from './utils/ScrollToTop';
+import { SuperAdminRoute, DashboardRoute } from './utils/ProtectedRoutes';
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) fetchPerfil(session.user.id);
-    });
+// Pages
+import AuthPortal from './pages/Auth/Portal/Portal';
+import ForgotPassword from './pages/Auth/ForgotPassword/ForgotPassword';
+import ResetPassword from './pages/Auth/ResetPassword/ResetPassword';
+import NotFoundPage from './pages/NotFound/404';
 
-    return () => subscription.unsubscribe();
-  }, []);
+import SuperAdminDashboard from './pages/SuperAdmin/Dashboard';
+import Dashboard from './pages/Dashboard/Dashboard';
+import Onboarding from './pages/Onboarding/Onboarding';
 
-  const fetchPerfil = async (userId) => {
-    const { data } = await supabase.from('perfiles').select('*').eq('id', userId).single();
-    setPerfil(data);
-  };
-
-  if (!session) return <AuthPortal />;
-
-  if (perfil && !perfil.barberia_id) {
-    return <Onboarding user={session.user} onComplete={() => fetchPerfil(session.user.id)} />;
-  }
-
+export default function App() {
   return (
-    <SubscriptionGuard user={session.user}>
-      <Dashboard barberiaId={perfil?.barberia_id} />
-    </SubscriptionGuard>
+    <ThemeProvider> {/* 1. Envolvemos con ThemeProvider */}
+      <AuthProvider>
+        <Router>
+          <ScrollToTop />
+          
+          {/* 2. Background Dinámico: bg-slate-50 (Claro) vs bg-[#050507] (Tu Oscuro) */}
+          <div className="min-h-screen bg-slate-50 dark:bg-[#050507] text-slate-900 dark:text-gray-200 font-sans flex flex-col transition-colors duration-500">
+            
+            <Header /> 
+            
+            <div className="flex-1">
+              <Routes>
+                <Route path="/login" element={<AuthPortal />} />
+                <Route path="/registro" element={<AuthPortal />} />
+                
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+
+                <Route element={<SuperAdminRoute />}>
+                  <Route path="/admin" element={<SuperAdminDashboard />} />
+                </Route>
+
+                <Route element={<DashboardRoute />}>
+                  <Route path="/dashboard" element={<Dashboard />} />
+                </Route>
+
+                <Route path="/onboarding" element={<Onboarding />} />
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </div>
+            
+            <Footer />
+
+          </div>
+        </Router>
+
+        <Toaster 
+           richColors 
+           position="bottom-right" 
+           closeButton
+           // El estilo del toast se adapta mejor dejándolo default con richColors, 
+           // o podés personalizarlo si querés
+        />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
-
-export default App;
