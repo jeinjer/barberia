@@ -9,7 +9,7 @@ export default function SubscriptionGuard({ children, user }) {
     const checkStatus = async () => {
       // Obtenemos el ID de suscripción vinculado al perfil del usuario
       const { data: perfil } = await supabase
-        .from('perfiles')
+        .from('roles')
         .select('suscripciones_saas(estado)')
         .eq('id', user.id)
         .single();
